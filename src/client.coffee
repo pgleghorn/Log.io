@@ -1,36 +1,3 @@
-### Log.io Web Client
-
-Listens to server for new log messages, renders them to screen "widgets".
-
-# Usage:
-wclient = new WebClient io, host: 'http://localhost:28778'
-screen = wclient.createScreen
-stream = wclient.logStreams.at 0
-node = wclient.logNodes.at 0
-screen.addPair stream, node
-screen.on 'new_log', (stream, node, level, message) ->
-
-###
-
-if process.browser
-  $ = require 'jquery-browserify'
-else
-  $ = eval "require('jquery')"
-backbone = require 'backbone'
-backbone.$ = $
-io = require 'socket.io-client'
-_ = require 'underscore'
-templates = require './templates'
-
-# Cap LogMessages collection size
-MESSAGE_CAP = 5000
-
-###
-ColorManager acts as a circular queue for color values.
-Every new Stream or Node is assigned a color value on instantiation.
-
-###
-
 class ColorManager
   _max: 20
   constructor: (@_index=1) ->
@@ -39,13 +6,6 @@ class ColorManager
     @_index++;
 
 colors = new ColorManager
-
-###
-Backbone models are used to represent nodes and streams.  When nodes
-go offline, their LogNode model is destroyed, along with their
-stream assocations.
-
-###
 
 class _LogObject extends backbone.Model
   idAttribute: 'name'
@@ -89,14 +49,6 @@ class LogMessages extends backbone.Collection
   _capped: =>
     @remove @at (@length - MESSAGE_CAP) if @length > MESSAGE_CAP
 
-
-###
-LogScreen models maintain state for screen widgets in the UI.
-When (Stream, Node) pairs are associated with a screen, the pair ID
-is stored on the model.  It uses pair ID instead of models themselves
-in case a node goes offline, and a new LogNode model is created.
-
-###
 class LogScreen extends backbone.Model
   idAttribute: null
   defaults: ->
@@ -140,13 +92,6 @@ class LogScreen extends backbone.Model
 
 class LogScreens extends backbone.Collection
   model: LogScreen
-
-###
-WebClient listens for log messages and stream/node announcements
-from the server via socket.io.  It manipulates state in LogNodes &
-LogStreams collections, which triggers view events.
-
-###
 
 class WebClient
   constructor: (opts={host: '', secure: false}, @localStorage={}) ->
@@ -244,24 +189,6 @@ class WebClient
     screen = new LogScreen name: sname
     @logScreens.add screen
     screen
-
-###
-Backbone views are used to manage the UI components,
-including the list of log nodes and screen panels.
-
-# View heirarchy:
-ClientApplication
-  LogControlPanel
-    ObjectControls
-      ObjectGroupControls
-        ObjectItemControls
-  LogScreenPanel
-    LogScreenView
-    LogStatsView
-
-TODO(msmathers): Build templates, fill out render() methods
-
-###
 
 class ClientApplication extends backbone.View
   el: '#web_client'
